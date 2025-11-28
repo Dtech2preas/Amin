@@ -35,13 +35,56 @@
         }
         .player-iframe { width: 100%; height: 70vh; border: none; background: #000; }
         @media (max-width: 768px) { .player-iframe { height: 50vh; } }
+
+        /* Loading Overlay */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        #loadingOverlay.active { opacity: 1; pointer-events: auto; }
+        .loader {
+            width: 50px; height: 50px;
+            border: 4px solid rgba(255,255,255,0.1); border-top-color: #1a73e8;
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: white; font-size: 1.2rem; font-weight: 300; letter-spacing: 1px; }
+
+        .next-btn {
+            background-color: #1a73e8;
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .next-btn:hover { background-color: #135abe; color: white; }
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="loader"></div>
+        <div class="loading-text">Connecting to Server...</div>
+    </div>
+
     <div class="container">
         <div class="header">
-            <a href="/anime/{{ anime_id }}" class="nav-btn"><i class="fas fa-arrow-left me-2"></i> Episodes</a>
-            <a href="/" class="nav-btn"><i class="fas fa-home me-2"></i> Home</a>
+            <div>
+                <a href="/anime/{{ anime_id }}" class="nav-btn"><i class="fas fa-arrow-left me-2"></i> Episodes</a>
+                <a href="/" class="nav-btn"><i class="fas fa-home me-2"></i> Home</a>
+            </div>
+            {% if next_ep_session %}
+            <a href="/watch/{{ anime_id }}/{{ next_ep_session }}" class="next-btn" onclick="showLoading()">
+                Next Ep {{ next_ep_number }} <i class="fas fa-forward ms-2"></i>
+            </a>
+            {% endif %}
         </div>
         
         <div class="player-container">
@@ -61,7 +104,35 @@
         </div>
     </div>
 
+    <!-- Vignette Ad -->
+    <script>(function(s){s.dataset.zone='10222214',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+
     <script>
+        // Ad Configuration
+        const AD_LINKS = [
+            "https://otieu.com/4/10250311",
+            "https://otieu.com/4/10205357",
+            "https://otieu.com/4/9515888"
+        ];
+        const AD_COOLDOWN = 5 * 60 * 1000; // 5 minutes
+
+        function triggerAd() {
+            try {
+                const lastAd = sessionStorage.getItem('last_ad_time');
+                const now = Date.now();
+                if (lastAd && (now - parseInt(lastAd) < AD_COOLDOWN)) return;
+
+                const link = AD_LINKS[Math.floor(Math.random() * AD_LINKS.length)];
+                window.open(link, '_blank');
+                sessionStorage.setItem('last_ad_time', now.toString());
+            } catch (e) { console.log("Ad suppressed"); }
+        }
+
+        function showLoading() {
+            triggerAd();
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+
         // --- HISTORY SAVING LOGIC ---
         // This runs ONLY when the player page actually loads
         document.addEventListener('DOMContentLoaded', function() {

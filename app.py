@@ -134,6 +134,25 @@ class AnimeIndex:
                     return ep
         return None
 
+    def get_next_episode(self, anime_id, current_session):
+        """Get the next episode data relative to the current session"""
+        anime = self.get_anime_by_id(anime_id)
+        if not anime or 'episodes' not in anime:
+            return None
+
+        episodes = anime['episodes']
+        # Sort by episode number just in case
+        try:
+            episodes.sort(key=lambda x: float(x.get('number', 0)))
+        except:
+            pass
+
+        for i, ep in enumerate(episodes):
+            if ep.get('episode_id') == current_session:
+                if i + 1 < len(episodes):
+                    return episodes[i + 1]
+        return None
+
 class CacheManager:
     def __init__(self, cache_file='data.json'):
         self.cache_file = cache_file
@@ -1640,6 +1659,11 @@ def watch_episode(anime_id, episode_session):
         # --- This now calls the new index-first function ---
         iframe_data = run_async_in_thread(backend.get_episode_iframe(anime_id, episode_session))
         
+        # Get next episode info
+        next_episode = backend.anime_index.get_next_episode(anime_id, episode_session)
+        next_ep_session = next_episode.get('episode_id') if next_episode else None
+        next_ep_number = next_episode.get('number') if next_episode else None
+
         if iframe_data['success'] and iframe_data['iframe_url']:
             episode_url = f"{backend.base_url}/play/{anime_id}/{episode_session}"
             cache_stats = backend.cache.get_cache_stats()
@@ -1647,7 +1671,9 @@ def watch_episode(anime_id, episode_session):
                                  iframe_url=iframe_data['iframe_url'],
                                  episode_url=episode_url,
                                  anime_id=anime_id,
-                                 cache_stats=cache_stats)
+                                 cache_stats=cache_stats,
+                                 next_ep_session=next_ep_session,
+                                 next_ep_number=next_ep_number)
         else:
             error_msg = iframe_data.get('error', 'Unknown error')
             return render_template('error.html', 
