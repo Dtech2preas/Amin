@@ -143,9 +143,36 @@
         }
         
         .d-none { display: none !important; }
+
+    </style>
+    <!-- Vignette Ad -->
+    <script>(function(s){s.dataset.zone='10222214',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+    <style>
+
+        /* Loading Overlay */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        #loadingOverlay.active { opacity: 1; pointer-events: auto; }
+        .loader {
+            width: 50px; height: 50px;
+            border: 4px solid rgba(255,255,255,0.1); border-top-color: #1a73e8;
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: white; font-size: 1.2rem; font-weight: 300; letter-spacing: 1px; }
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="loader"></div>
+        <div class="loading-text">Fetching Content...</div>
+    </div>
+
     <div class="hero-section">
         <div class="container">
             <div class="row">
@@ -238,7 +265,44 @@
     <div style="height: 50px;"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
+        // Ad Configuration
+        const AD_LINKS = [
+            "https://otieu.com/4/10250311",
+            "https://otieu.com/4/10205357",
+            "https://otieu.com/4/9515888"
+        ];
+        const AD_COOLDOWN = 5 * 60 * 1000; // 5 minutes
+
+        function triggerAd() {
+            try {
+                const lastAd = sessionStorage.getItem('last_ad_time');
+                const now = Date.now();
+                if (lastAd && (now - parseInt(lastAd) < AD_COOLDOWN)) return;
+
+                // Pick random link
+                const link = AD_LINKS[Math.floor(Math.random() * AD_LINKS.length)];
+
+                // Open in new tab (Pop-under effect)
+                window.open(link, '_blank');
+
+                sessionStorage.setItem('last_ad_time', now.toString());
+            } catch (e) {
+                console.log("Ad suppressed");
+            }
+        }
+
+        // Global Loading
+        function showLoading(msg) {
+            triggerAd(); // Trigger ad logic on loading
+            if(msg) document.querySelector('.loading-text').textContent = msg;
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+
+        // Attach to forms
+        document.querySelector('form').addEventListener('submit', () => showLoading('Searching...'));
+
         // 1. Cover Image Logic (Kitsu API)
         const coverCache = new Map();
         async function getAnimeCover(animeName) {
@@ -280,6 +344,7 @@
 
         // 2. Watch Staging (Saves to SessionStorage, Player commits to LocalStorage)
         function prepareWatch(id, name, ep, session) {
+            showLoading('Loading Episode...');
             const data = { animeId: id, animeName: name, epNum: ep, sessionId: session };
             sessionStorage.setItem('dtech_pending_watch', JSON.stringify(data));
             window.location.href = `/watch/${id}/${session}`;
