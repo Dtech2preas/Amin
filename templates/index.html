@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D-TECH ANIME</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #1a73e8;
+            --dark-blue: #0d47a1;
+            --dark-bg: #121212;
+            --card-bg: #1e1e1e;
+            --text-light: #f5f5f5;
+            --text-muted: #b0b0b0;
+        }
+        
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, var(--dark-blue) 0%, var(--dark-bg) 100%);
+            padding: 2rem 0;
+            margin-bottom: 1.5rem;
+            border-radius: 0 0 1rem 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .search-box { max-width: 600px; margin: 0 auto; }
+        .search-box input {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-light);
+        }
+        .search-box button { background-color: var(--primary-blue); border-color: var(--primary-blue); }
+        
+        .section-title {
+            border-left: 4px solid var(--primary-blue);
+            padding-left: 0.8rem;
+            margin: 1.5rem 0 1rem 0;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        /* --- HORIZONTAL SCROLL --- */
+        .media-scroller {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: 160px;
+            gap: 1rem;
+            overflow-x: auto;
+            overscroll-behavior-inline: contain;
+            padding-bottom: 1rem;
+            padding-left: 5px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-blue) var(--card-bg);
+        }
+        @media (min-width: 768px) { .media-scroller { grid-auto-columns: 200px; } }
+        
+        .media-scroller::-webkit-scrollbar { height: 6px; }
+        .media-scroller::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+        .media-scroller::-webkit-scrollbar-thumb { background: var(--primary-blue); border-radius: 10px; }
+
+        /* --- CARDS --- */
+        .anime-card-compact {
+            background-color: transparent;
+            border: none;
+            position: relative;
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+        .anime-card-compact:hover { transform: translateY(-3px); color: var(--primary-blue); }
+
+        .cover-wrapper {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 2/3;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .anime-cover { width: 100%; height: 100%; object-fit: cover; }
+        
+        .overlay-ep {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            padding: 20px 8px 5px 8px;
+            display: flex; justify-content: space-between; align-items: flex-end;
+        }
+        .ep-badge {
+            background-color: var(--primary-blue); color: white;
+            font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold;
+        }
+
+        .play-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .cover-wrapper:hover .play-overlay { opacity: 1; }
+
+        /* History Specific */
+        .history-actions {
+            position: absolute; top: 5px; right: 5px; z-index: 10;
+        }
+        .btn-list-view {
+            background: rgba(0,0,0,0.7); color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; transition: all 0.2s;
+        }
+        .btn-list-view:hover { background: var(--primary-blue); border-color: var(--primary-blue); }
+        
+        .watched-time {
+            position: absolute; top: 5px; left: 5px;
+            background: rgba(0,0,0,0.7); color: #ccc;
+            font-size: 0.65rem; padding: 2px 6px; border-radius: 4px;
+        }
+
+        .compact-title {
+            font-size: 0.9rem; font-weight: 600; line-height: 1.2;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; margin-bottom: 4px;
+        }
+        .compact-subtitle { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .loading-cover {
+            background: linear-gradient(45deg, var(--dark-blue), #2c2c2c);
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.2); height: 100%;
+        }
+        
+        .d-none { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1 class="display-6 mb-3"><i class="fas fa-play-circle me-2"></i>D-TECH ANIME</h1>
+                    <form action="/search" method="POST" class="search-box">
+                        <div class="input-group">
+                            <input type="text" name="query" class="form-control" 
+                                   placeholder="Search anime..." required autocomplete="off">
+                            <button class="btn text-white" type="submit"><i class="fas fa-search"></i></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if not backend_ready %}
+        <div class="alert alert-warning">Backend initializing...</div>
+        {% endif %}
+        
+        <div id="continueWatchingSection" class="row d-none">
+            <div class="col-12">
+                <h3 class="section-title"><i class="fas fa-history me-2"></i>Continue Watching</h3>
+                <div class="media-scroller" id="historyContainer"></div>
+            </div>
+        </div>
+        
+        <div id="favoritesSection" class="row d-none mt-4">
+            <div class="col-12">
+                <h3 class="section-title"><i class="fas fa-heart me-2"></i>My List</h3>
+                <div class="media-scroller" id="favoritesContainer"></div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-end mb-2">
+                    <h3 class="section-title m-0"><i class="fas fa-tv me-2"></i>Fresh Episodes</h3>
+                    <small class="text-muted" style="font-size: 0.8rem;">Updates 24h</small>
+                </div>
+                
+                {% if currently_airing_episodes %}
+                <div class="media-scroller">
+                    {% for episode in currently_airing_episodes %}
+                    <div class="anime-card-compact" 
+                         onclick="prepareWatch('{{ episode.anime_id }}', '{{ episode.anime_name|replace("'", "\\'") }}', '{{ episode.episode_number }}', '{{ episode.session_id }}')">
+                        <div class="cover-wrapper">
+                            <div class="loading-cover" data-anime-name="{{ episode.anime_name }}">
+                                <i class="fas fa-play"></i>
+                            </div>
+                            <div class="play-overlay"><i class="fas fa-play-circle fa-2x text-white"></i></div>
+                            <div class="overlay-ep"><span class="ep-badge">Ep {{ episode.episode_number }}</span></div>
+                        </div>
+                        <div class="compact-title">{{ episode.anime_name }}</div>
+                        <div class="compact-subtitle">{{ episode.episode_title }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">Loading episodes...</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3 class="section-title"><i class="fas fa-fire me-2"></i>Popular Anime</h3>
+                {% if popular_anime %}
+                <div class="media-scroller">
+                    {% for anime in popular_anime %}
+                    <a href="{{ url_for('anime_episodes', anime_id=anime.id) }}" class="anime-card-compact">
+                        <div class="cover-wrapper">
+                            <div class="loading-cover" data-anime-name="{{ anime.title }}">
+                                <i class="fas fa-film"></i>
+                            </div>
+                            <div class="play-overlay"><i class="fas fa-list fa-2x text-white"></i></div>
+                        </div>
+                        <div class="compact-title">{{ anime.title }}</div>
+                        <div class="compact-subtitle">Series</div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div style="height: 50px;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 1. Cover Image Logic (Kitsu API)
+        const coverCache = new Map();
+        async function getAnimeCover(animeName) {
+            if (coverCache.has(animeName)) return coverCache.get(animeName);
+            const cached = localStorage.getItem(`cover_${animeName}`);
+            if (cached) { coverCache.set(animeName, cached); return cached; }
+            
+            try {
+                const cleanName = animeName.replace(/[^\w\s]/gi, '').trim();
+                const res = await fetch(`https://kitsu.io/api/edge/anime?filter[text]=${encodeURIComponent(cleanName)}&page[limit]=1`);
+                const data = await res.json();
+                const url = data.data?.[0]?.attributes?.posterImage?.medium;
+                if (url) {
+                    coverCache.set(animeName, url);
+                    localStorage.setItem(`cover_${animeName}`, url);
+                    return url;
+                }
+            } catch (e) { console.error(e); }
+            return null;
+        }
+
+        async function loadAllCoverImages() {
+            const els = document.querySelectorAll('.loading-cover');
+            for (let i=0; i<els.length; i+=3) {
+                const batch = Array.from(els).slice(i, i+3);
+                await Promise.all(batch.map(async (el) => {
+                    if (el.tagName === 'IMG') return;
+                    const name = el.getAttribute('data-anime-name');
+                    const url = await getAnimeCover(name);
+                    if (url) {
+                        const img = document.createElement('img');
+                        img.src = url; img.className = 'anime-cover';
+                        el.parentNode.replaceChild(img, el);
+                    }
+                }));
+                await new Promise(r => setTimeout(r, 200));
+            }
+        }
+
+        // 2. Watch Staging (Saves to SessionStorage, Player commits to LocalStorage)
+        function prepareWatch(id, name, ep, session) {
+            const data = { animeId: id, animeName: name, epNum: ep, sessionId: session };
+            sessionStorage.setItem('dtech_pending_watch', JSON.stringify(data));
+            window.location.href = `/watch/${id}/${session}`;
+        }
+
+        // 3. Load Sections
+        function formatTime(ts) {
+            const diff = Date.now() - ts;
+            if (diff < 3600000) return Math.round(diff/60000) + "m ago";
+            if (diff < 86400000) return Math.round(diff/3600000) + "h ago";
+            return new Date(ts).toLocaleDateString();
+        }
+
+        function loadUserData() {
+            // History
+            const history = JSON.parse(localStorage.getItem('dtech_watch_history') || '[]');
+            const histContainer = document.getElementById('historyContainer');
+            if (history.length > 0) {
+                document.getElementById('continueWatchingSection').classList.remove('d-none');
+                histContainer.innerHTML = history.map(item => `
+                    <div class="anime-card-compact">
+                        <div class="cover-wrapper" onclick="prepareWatch('${item.animeId}', '${item.animeName.replace(/'/g,"\\'")}', '${item.epNum}', '${item.sessionId}')">
+                            <div class="loading-cover" data-anime-name="${item.animeName}"><i class="fas fa-play"></i></div>
+                            <div class="watched-time">${formatTime(item.timestamp)}</div>
+                            <div class="play-overlay"><i class="fas fa-play-circle fa-2x text-white"></i></div>
+                            <div class="history-actions" onclick="event.stopPropagation(); window.location.href='/anime/${item.animeId}'">
+                                <button class="btn-list-view"><i class="fas fa-list"></i></button>
+                            </div>
+                            <div class="overlay-ep"><span class="ep-badge">Ep ${item.epNum}</span></div>
+                        </div>
+                        <div class="compact-title" onclick="window.location.href='/anime/${item.animeId}'">${item.animeName}</div>
+                        <div class="compact-subtitle">Continue Ep ${item.epNum}</div>
+                    </div>
+                `).join('');
+            }
+
+            // Favorites
+            const favs = JSON.parse(localStorage.getItem('dtech_favorites') || '[]');
+            const favContainer = document.getElementById('favoritesContainer');
+            if (favs.length > 0) {
+                document.getElementById('favoritesSection').classList.remove('d-none');
+                favContainer.innerHTML = favs.map(item => `
+                    <a href="/anime/${item.id}" class="anime-card-compact">
+                        <div class="cover-wrapper">
+                            <div class="loading-cover" data-anime-name="${item.title}"><i class="fas fa-heart"></i></div>
+                        </div>
+                        <div class="compact-title">${item.title}</div>
+                        <div class="compact-subtitle">My List</div>
+                    </a>
+                `).join('');
+            }
+            
+            loadAllCoverImages();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserData();
+            // Initial load for non-generated items
+            setTimeout(loadAllCoverImages, 100);
+        });
+    </script>
+</body>
+</html>

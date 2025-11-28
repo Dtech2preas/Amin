@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Anime Player - AnimePahe Backend</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+            color: white;
+            min-height: 100vh;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .nav-btn {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.2); color: #1a73e8; }
+        .player-container {
+            width: 100%;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+        .player-iframe { width: 100%; height: 70vh; border: none; background: #000; }
+        @media (max-width: 768px) { .player-iframe { height: 50vh; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/anime/{{ anime_id }}" class="nav-btn"><i class="fas fa-arrow-left me-2"></i> Episodes</a>
+            <a href="/" class="nav-btn"><i class="fas fa-home me-2"></i> Home</a>
+        </div>
+        
+        <div class="player-container">
+            {% if iframe_url %}
+            <iframe src="{{ iframe_url }}" 
+                    class="player-iframe"
+                    allowfullscreen 
+                    webkitallowfullscreen 
+                    mozallowfullscreen>
+            </iframe>
+            {% else %}
+            <div style="padding: 100px; text-align: center; color: #ff6b6b;">
+                <h2>❌ Player Not Available</h2>
+                <p>Could not load the video player for this episode.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // --- HISTORY SAVING LOGIC ---
+        // This runs ONLY when the player page actually loads
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // Retrieve the data staged by index.html or episodes.html
+                const pendingData = sessionStorage.getItem('dtech_pending_watch');
+                
+                if (pendingData) {
+                    const data = JSON.parse(pendingData);
+                    
+                    // Verify the ID matches the current URL to prevent errors
+                    // (Simple check to ensure we are on the page we intended to visit)
+                    if (window.location.href.includes(data.sessionId)) {
+                        saveToPermanentHistory(data);
+                        // Clear pending after saving
+                        sessionStorage.removeItem('dtech_pending_watch');
+                    }
+                }
+            } catch (e) {
+                console.error("Error saving history:", e);
+            }
+        });
+
+        function saveToPermanentHistory(data) {
+            let history = JSON.parse(localStorage.getItem('dtech_watch_history') || '[]');
+            
+            // Remove existing entry for this specific anime ID (to bump it to top)
+            history = history.filter(item => item.animeId !== data.animeId);
+            
+            // Add timestamp
+            data.timestamp = Date.now();
+            
+            // Add new entry to top
+            history.unshift(data);
+            
+            // Limit to 15 items as requested
+            if (history.length > 15) {
+                history = history.slice(0, 15);
+            }
+            
+            localStorage.setItem('dtech_watch_history', JSON.stringify(history));
+            console.log("Saved to history:", data.animeName);
+        }
+    </script>
+</body>
+</html>

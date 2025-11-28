@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ anime_title }} - Episodes</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+            color: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            background: rgba(30, 30, 30, 0.5);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .back-btn, .live-btn {
+            padding: 10px 20px;
+            background: rgba(26, 115, 232, 0.1);
+            border: 1px solid rgba(26, 115, 232, 0.3);
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .back-btn:hover, .live-btn:hover { background: #1a73e8; }
+        .live-btn { color: #feca57; border-color: #feca57; }
+        .live-btn:hover { background: #feca57; color: #000; }
+        
+        .anime-info { flex: 1; }
+        
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .anime-info h1 {
+            font-size: 2rem;
+            margin: 0;
+            background: linear-gradient(45deg, #1a73e8, #64b5f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .fav-btn {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.5);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fav-btn:hover { border-color: #ff4757; color: #ff4757; }
+        .fav-btn.active { background: #ff4757; border-color: #ff4757; color: white; }
+
+        .episodes-count { margin-top: 10px; opacity: 0.7; font-size: 0.9rem; }
+        
+        .episodes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+        }
+        
+        .episode-card {
+            background: #1e1e1e;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+        
+        .episode-card:hover {
+            transform: translateY(-5px);
+            background: #252525;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .episode-number { font-size: 1.4rem; font-weight: bold; margin-bottom: 5px; color: #1a73e8; }
+        .episode-title { font-size: 0.85rem; opacity: 0.8; margin-bottom: 15px; line-height: 1.3; }
+        
+        .watch-btn {
+            display: block;
+            padding: 8px 0;
+            background: #1a73e8;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        
+        .watch-btn:hover { background: #1557b0; }
+        
+        .pagination { display: flex; justify-content: center; margin-top: 40px; }
+        .pagination-btn {
+            padding: 12px 30px;
+            background: #1e1e1e;
+            border: 1px solid #1a73e8;
+            border-radius: 8px;
+            color: #1a73e8;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .pagination-btn:hover { background: #1a73e8; color: white; }
+
+        @media (max-width: 768px) {
+            .episodes-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+            .header { text-align: center; justify-content: center; }
+            .title-row { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+            
+            <div class="anime-info">
+                <div class="title-row">
+                    <h1>{{ anime_title }}</h1>
+                    <button id="favBtn" class="fav-btn" onclick="toggleFavorite()">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
+                <p class="episodes-count">
+                    {% if is_live_page %}
+                        Found {{ episodes|length }} episodes (Live Scrape)
+                    {% else %}
+                        {{ episodes|length }} / {{ total_episodes }} episodes
+                    {% endif %}
+                </p>
+            </div>
+            
+            {% if not is_live_page %}
+                <a href="{{ url_for('anime_episodes_scraped', anime_id=anime_id, page=1) }}" class="live-btn">
+                    <i class="fas fa-sync-alt me-2"></i> Live Check
+                </a>
+            {% endif %}
+        </div>
+        
+        {% if episodes %}
+        <div class="episodes-grid">
+            {% for episode in episodes %}
+            <div class="episode-card">
+                <div>
+                    <div class="episode-number">EP {{ episode.number }}</div>
+                    <div class="episode-title">
+                        {{ episode.title if episode.title != "Episode" else "Full Episode" }}
+                    </div>
+                </div>
+                <a href="/watch/{{ anime_id }}/{{ episode.session }}" 
+                   class="watch-btn"
+                   onclick="prepareWatch('{{ episode.number }}', '{{ episode.session }}')">
+                   <i class="fas fa-play me-1"></i> Play
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if has_next_page %}
+        <div class="pagination">
+            {% set next_url = url_for('anime_episodes_scraped' if is_live_page else 'anime_episodes', anime_id=anime_id, page=next_page) %}
+            <a href="{{ next_url }}" class="pagination-btn">Load More Episodes <i class="fas fa-chevron-down ms-2"></i></a>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div style="text-align: center; padding: 50px; opacity: 0.6;">
+            <h2><i class="fas fa-ghost fa-2x mb-3"></i></h2>
+            <p>No episodes found here yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const animeId = "{{ anime_id }}";
+        const animeTitle = "{{ anime_title|replace('"', '\\"') }}";
+
+        // 1. Handle Favorites
+        document.addEventListener('DOMContentLoaded', () => {
+            const favs = JSON.parse(localStorage.getItem('dtech_favorites') || '[]');
+            const isFav = favs.some(f => f.id === animeId);
+            const btn = document.getElementById('favBtn');
+            if(isFav && btn) btn.classList.add('active');
+        });
+
+        function toggleFavorite() {
+            let favs = JSON.parse(localStorage.getItem('dtech_favorites') || '[]');
+            const index = favs.findIndex(f => f.id === animeId);
+            const btn = document.getElementById('favBtn');
+            
+            if (index === -1) {
+                // Add
+                favs.push({ id: animeId, title: animeTitle });
+                btn.classList.add('active');
+            } else {
+                // Remove
+                favs.splice(index, 1);
+                btn.classList.remove('active');
+            }
+            localStorage.setItem('dtech_favorites', JSON.stringify(favs));
+        }
+
+        // 2. Prepare Watch Data (Staging for Player)
+        function prepareWatch(epNum, sessionId) {
+            const data = {
+                animeId: animeId,
+                animeName: animeTitle,
+                epNum: epNum,
+                sessionId: sessionId
+            };
+            // Save to temporary session storage
+            sessionStorage.setItem('dtech_pending_watch', JSON.stringify(data));
+        }
+    </script>
+</body>
+</html>
