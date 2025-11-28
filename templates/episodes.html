@@ -44,6 +44,22 @@
         .back-btn:hover, .live-btn:hover { background: #1a73e8; }
         .live-btn { color: #feca57; border-color: #feca57; }
         .live-btn:hover { background: #feca57; color: #000; }
+
+        /* Loading Overlay */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        #loadingOverlay.active { opacity: 1; pointer-events: auto; }
+        .loader {
+            width: 50px; height: 50px;
+            border: 4px solid rgba(255,255,255,0.1); border-top-color: #1a73e8;
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: white; font-size: 1.2rem; font-weight: 300; letter-spacing: 1px; }
         
         .anime-info { flex: 1; }
         
@@ -143,6 +159,12 @@
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="loader"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+
     <div class="container">
         <div class="header">
             <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
@@ -164,7 +186,7 @@
             </div>
             
             {% if not is_live_page %}
-                <a href="{{ url_for('anime_episodes_scraped', anime_id=anime_id, page=1) }}" class="live-btn">
+                <a href="{{ url_for('anime_episodes_scraped', anime_id=anime_id, page=1) }}" class="live-btn" onclick="showLoading('Scraping Live Data...')">
                     <i class="fas fa-sync-alt me-2"></i> Live Check
                 </a>
             {% endif %}
@@ -192,7 +214,7 @@
         {% if has_next_page %}
         <div class="pagination">
             {% set next_url = url_for('anime_episodes_scraped' if is_live_page else 'anime_episodes', anime_id=anime_id, page=next_page) %}
-            <a href="{{ next_url }}" class="pagination-btn">Load More Episodes <i class="fas fa-chevron-down ms-2"></i></a>
+            <a href="{{ next_url }}" class="pagination-btn" onclick="showLoading('Loading More...')">Load More Episodes <i class="fas fa-chevron-down ms-2"></i></a>
         </div>
         {% endif %}
 
@@ -207,6 +229,12 @@
     <script>
         const animeId = "{{ anime_id }}";
         const animeTitle = "{{ anime_title|replace('"', '\\"') }}";
+
+        // Global Loading
+        function showLoading(msg) {
+            if(msg) document.querySelector('.loading-text').textContent = msg;
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
 
         // 1. Handle Favorites
         document.addEventListener('DOMContentLoaded', () => {
@@ -235,6 +263,7 @@
 
         // 2. Prepare Watch Data (Staging for Player)
         function prepareWatch(epNum, sessionId) {
+            showLoading('Loading Player...');
             const data = {
                 animeId: animeId,
                 animeName: animeTitle,
